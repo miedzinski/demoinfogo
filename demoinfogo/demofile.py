@@ -1,12 +1,11 @@
 import struct
 
-from . import netmessages_public_pb2
-from . import cstrike15_usermessages_public_pb2
-
 
 MAXOSPATH = 260
 DEMOHEADER = 'HL2DEMO'
 DEMOPROTOCOL = 4
+
+MAXSPLITSCREENCLIENTS = 2
 
 
 class DemoError(Exception):
@@ -67,11 +66,11 @@ class DemoHeader(object):
 
 class DemoFile(object):
 
-    def __init__(self, path):
-        self.file = open(path, 'rb')
+    def __init__(self, demofile):
+        self.file = demofile
 
-        demoheader = struct.Struct('@8sii{0}s{0}s{0}s{0}sfiii'.format(MAXOSPATH))
-        data = demoheader.unpack_from(self.file.read(demoheader.size))
+        fmt = '@8sii{0}s{0}s{0}s{0}sfiii'.format(MAXOSPATH)
+        data = struct.unpack(fmt, self.file.read(struct.calcsize(fmt)))
         self.header = DemoHeader(*list(data))
 
         if self.header.demofilestamp != DEMOHEADER:
@@ -80,10 +79,38 @@ class DemoFile(object):
         if self.header.demoprotocol != DEMOPROTOCOL:
             raise DemoError('Unsupported protocol')
 
-        self.offset = demoheader.size
+    def _read_struct(self, fmt):
+        return struct.unpack(fmt, self.file.read(struct.calcsize(fmt)))[0]
 
-    def __enter__(self):
-        return self
+    def read_raw_data(self):
+        size = self._read_struct('@i')
+        data = self.file.read(size)
 
-    def __exit__(self, type, value, traceback):
-        self.file.close()
+        return size, data
+
+    def read_sequence_info(self):
+        seq_nr_in = self._read_struct('@i')
+        seq_nr_out = self._read_struct('@i')
+
+        return seq_nr_in, seq_nr_out
+
+    def read_cmd_info(self):
+        fmt = '@{}'.format('iffffffffffffffffff' * MAXSPLITSCREENCLIENTS)
+
+        return self._read_struct(fmt)
+
+    def read_cmd_header(self):
+        cmd = self._read_struct('@B')
+        if cmd <= 0:
+            cmd = DemoMsg.dem_stop
+            return cmd, 0, 0
+        tick = self._read_struct('@i')
+        player_slot = self._read_struct('@B')
+
+        return cmd, tick, player_slot
+
+    def read_user_cmd(self):
+        outgoing_sequence = self._read_struct('@i')
+        size, data = self.read_raw_data()
+
+        return outgoing_sequence, size, data
