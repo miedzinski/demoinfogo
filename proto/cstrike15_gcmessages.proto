@@ -74,6 +74,13 @@ enum ECsgoGCMsg {
 	k_EMsgGC_GlobalGame_Play = 9170;
 	k_EMsgGCCStrike15_v2_AcknowledgePenalty = 9171;
 	k_EMsgGCCStrike15_v2_Client2GCRequestPrestigeCoin = 9172;
+	k_EMsgGCCStrike15_v2_GC2ClientGlobalStats = 9173;
+	k_EMsgGCCStrike15_v2_Client2GCStreamUnlock = 9174;
+	k_EMsgGCCStrike15_v2_FantasyRequestClientData = 9175;
+	k_EMsgGCCStrike15_v2_FantasyUpdateClientData = 9176;
+	k_EMsgGCCStrike15_v2_GlobalChat = 9180;
+	k_EMsgGCCStrike15_v2_GlobalChat_Subscribe = 9181;
+	k_EMsgGCCStrike15_v2_GlobalChat_Unsubscribe = 9182;
 }
 
 message GameServerPing {
@@ -224,6 +231,29 @@ message XpProgressData {
 	optional int32 xp_category = 2;
 }
 
+message MatchEndItemUpdates {
+	optional uint64 item_id = 1;
+	optional uint32 item_attr_defidx = 2;
+	optional uint32 item_attr_delta_value = 3;
+}
+
+message ScoreLeaderboardData {
+	message Entry {
+		optional uint32 tag = 1;
+		optional uint32 val = 2;
+	}
+
+	message AccountEntries {
+		optional uint32 accountid = 1;
+		repeated .ScoreLeaderboardData.Entry entries = 2;
+	}
+
+	optional uint64 quest_id = 1;
+	optional uint32 score = 2;
+	repeated .ScoreLeaderboardData.AccountEntries accountentries = 3;
+	repeated .ScoreLeaderboardData.Entry matchentries = 5;
+}
+
 message PlayerQuestData {
 	message QuestItemData {
 		optional uint64 quest_id = 1;
@@ -236,10 +266,14 @@ message PlayerQuestData {
 	repeated .XpProgressData xp_progress_data = 3;
 	optional uint32 time_played = 4;
 	optional uint32 mm_game_mode = 5;
+	repeated .MatchEndItemUpdates item_updates = 6;
 }
 
 message CMsgGC_ServerQuestUpdateData {
 	repeated .PlayerQuestData player_quest_data = 1;
+	optional bytes binary_data = 2;
+	optional uint32 mm_game_mode = 3;
+	optional .ScoreLeaderboardData missionlbsdata = 4;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingGCOperationalStats {
@@ -362,18 +396,22 @@ message CMsgGCCStrike15_v2_MatchmakingServerReservationResponse {
 	optional uint32 reward_item_attr_reward_idx = 11;
 	optional uint32 reward_drop_list = 12;
 	optional string tournament_tag = 13;
+	optional uint32 steamdatagram_port = 14;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingGC2ClientReserve {
 	optional uint64 serverid = 1;
-	optional uint32 serverip = 2;
-	optional uint32 serverport = 3;
 	optional uint64 reservationid = 4;
 	optional .CMsgGCCStrike15_v2_MatchmakingGC2ServerReserve reservation = 5;
 	optional string map = 6;
+	optional string server_address = 7;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingServerRoundStats {
+	message DropInfo {
+		optional uint32 account_mvp = 1;
+	}
+
 	optional uint64 reservationid = 1;
 	optional .CMsgGCCStrike15_v2_MatchmakingGC2ServerReserve reservation = 2;
 	optional string map = 3;
@@ -399,6 +437,7 @@ message CMsgGCCStrike15_v2_MatchmakingServerRoundStats {
 	optional uint32 spectators_count_tv = 23;
 	optional uint32 spectators_count_lnk = 24;
 	repeated int32 enemy_kills_agg = 25;
+	optional .CMsgGCCStrike15_v2_MatchmakingServerRoundStats.DropInfo drop_info = 26;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingServerMatchEnd {
@@ -409,6 +448,7 @@ message CMsgGCCStrike15_v2_MatchmakingServerMatchEnd {
 	optional uint32 replay_cluster_id = 6;
 	optional bool aborted_match = 7;
 	optional .CMsgGC_ServerQuestUpdateData match_end_quest_data = 8;
+	optional uint32 server_version = 9;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingClient2GCHello {
@@ -457,13 +497,6 @@ message CMsgGCCStrike15_v2_MatchmakingServer2GCKick {
 	optional uint32 reason = 3;
 }
 
-message CDataGCCStrike15_v2_MatchmakingLockedInMatch {
-	optional .CMsgGCCStrike15_v2_MatchmakingGC2ClientReserve client_reservation = 1;
-	optional .CMsgGCCStrike15_v2_MatchmakingServerRoundStats server_stats = 2;
-	optional uint32 rtime32_server_info = 3;
-	optional .CMsgGCCStrike15_v2_MatchmakingServerRoundStats last_round_stats_temp = 4;
-}
-
 message CMsgGCCStrike15_v2_MatchmakingGC2ServerRankUpdate {
 	repeated .PlayerRankingInfo rankings = 1;
 	optional uint64 match_id = 2;
@@ -502,6 +535,7 @@ message CMsgGCCStrike15_v2_ClientReportServer {
 	optional uint32 rpt_abusivemodels = 2;
 	optional uint32 rpt_badmotd = 3;
 	optional uint32 rpt_listingabuse = 4;
+	optional uint32 rpt_inventoryabuse = 5;
 	optional uint64 match_id = 8;
 }
 
@@ -715,7 +749,8 @@ message CDataGCCStrike15_v2_MatchInfo {
 	optional uint64 matchid = 1;
 	optional uint32 matchtime = 2;
 	optional .WatchableMatchInfo watchablematchinfo = 3;
-	optional .CMsgGCCStrike15_v2_MatchmakingServerRoundStats roundstats = 4;
+	optional .CMsgGCCStrike15_v2_MatchmakingServerRoundStats roundstats_legacy = 4;
+	repeated .CMsgGCCStrike15_v2_MatchmakingServerRoundStats roundstatsall = 5;
 }
 
 message CDataGCCStrike15_v2_TournamentGroupTeam {
@@ -725,15 +760,20 @@ message CDataGCCStrike15_v2_TournamentGroupTeam {
 }
 
 message CDataGCCStrike15_v2_TournamentGroup {
+	message Picks {
+		repeated int32 pickids = 1;
+	}
+
 	optional uint32 groupid = 1;
 	optional string name = 2;
 	optional string desc = 3;
-	optional uint32 picks = 4;
+	optional uint32 picks__deprecated = 4;
 	repeated .CDataGCCStrike15_v2_TournamentGroupTeam teams = 5;
 	repeated int32 stage_ids = 6;
 	optional uint32 picklockuntiltime = 7;
 	optional uint32 pickableteams = 8;
 	optional uint32 points_per_pick = 9;
+	repeated .CDataGCCStrike15_v2_TournamentGroup.Picks picks = 10;
 }
 
 message CDataGCCStrike15_v2_TournamentSection {
@@ -769,6 +809,22 @@ message CMsgGCCStrike15_v2_Predictions {
 
 	optional uint32 event_id = 1;
 	repeated .CMsgGCCStrike15_v2_Predictions.GroupMatchTeamPick group_match_team_picks = 2;
+}
+
+message CMsgGCCStrike15_v2_Fantasy {
+	message FantasySlot {
+		optional int32 type = 1;
+		optional int32 pick = 2;
+		optional uint64 itemid = 3;
+	}
+
+	message FantasyTeam {
+		optional int32 sectionid = 1;
+		repeated .CMsgGCCStrike15_v2_Fantasy.FantasySlot slots = 2;
+	}
+
+	optional uint32 event_id = 1;
+	repeated .CMsgGCCStrike15_v2_Fantasy.FantasyTeam teams = 2;
 }
 
 message CAttribute_String {
@@ -881,5 +937,20 @@ message CMsgGCCStrike15_v2_AcknowledgePenalty {
 }
 
 message CMsgGCCStrike15_v2_Client2GCRequestPrestigeCoin {
+}
+
+message CMsgGCCStrike15_v2_Client2GCStreamUnlock {
+	optional uint64 ticket = 1;
+	optional int32 os = 2;
+}
+
+message CMsgGCCStrike15_v2_ClientToGCChat {
+	optional uint64 match_id = 1;
+	optional string text = 2;
+}
+
+message CMsgGCCStrike15_v2_GCToClientChat {
+	optional uint32 account_id = 1;
+	optional string text = 2;
 }
 
