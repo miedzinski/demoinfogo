@@ -1,11 +1,8 @@
+import collections
 import struct
 
-from collections import defaultdict
-
-from .proto.netmessages_pb2 import *
-from .proto.cstrike15_usermessages_pb2 import *
-
-from .demofile import DemoError, DemoMsg, DemoFile
+from demoinfogo.demofile import DemoError, DemoMsg, DemoFile
+from demoinfogo.proto.netmessages_pb2 import *
 
 
 class DemoDump(object):
@@ -51,7 +48,7 @@ class DemoDump(object):
     }
 
     game_event_list = []
-    GAME_EVENTS = defaultdict(list)
+    GAME_EVENTS = collections.defaultdict(list)
 
     def __init__(self, demo):
         self.demo = DemoFile(demo)
@@ -119,7 +116,8 @@ class DemoDump(object):
                     callback(data)
             index += size
 
-    def _read_int32(self, buf, index):
+    @staticmethod
+    def _read_int32(buf, index):
         count = 0
         result = 0
 
