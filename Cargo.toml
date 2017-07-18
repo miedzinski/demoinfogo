@@ -1,0 +1,16 @@
+[package]
+name = "demoinfogo"
+version = "0.1.0"
+authors = ["Dominik Miedziński <dominik@mdzn.pl>"]
+
+[dependencies]
+bitflags = "0.9.1"
+matches = "0.1.6"
+protobuf = "1.4.1"
+
+[dependencies.csgoproto]
+path = "./csgoproto"
+
+[replace."protobuf:1.4.1"]
+git = "https://github.com/miedzinski/rust-protobuf"
+branch = "io-traits"

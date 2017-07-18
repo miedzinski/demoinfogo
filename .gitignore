@@ -62,5 +62,6 @@ target/
 # PyCharm
 .idea/
 
-# https://github.com/SteamDatabase/GameTracking
-GameTracking/
+# Rust stuff
+target/
+Cargo.lock

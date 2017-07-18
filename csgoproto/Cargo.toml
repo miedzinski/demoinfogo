@@ -1,0 +1,11 @@
+[package]
+name = "csgoproto"
+version = "0.1.0"
+authors = ["Dominik Miedziński <dominik@mdzn.pl>"]
+
+[dependencies]
+protobuf = "1.4.1"
+
+[replace."protobuf:1.4.1"]
+git = "https://github.com/miedzinski/rust-protobuf"
+branch = "io-traits"
